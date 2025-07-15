@@ -78,7 +78,7 @@ def tyre_strategy_chart(request):
     else:
         # Procesar y guardar datos
         session = fastf1.get_session(2025, race_short, 'R')
-        session.load()
+        session.load(telemetry=False)
 
         laps = session.laps
         drivers = session.drivers
@@ -163,7 +163,7 @@ def laptimes_view(request):
                 laptimes = json.load(f)
         else:
             session = fastf1.get_session(2025, selected_race, 'R')
-            session.load()
+            session.load(telemetry=False)
             laps = session.laps.pick_driver(driver_code)
             laptimes = [
                 {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime)}
@@ -210,7 +210,7 @@ def comparison_view(request):
         for code, file in [(code1, file1), (code2, file2)]:
             if not os.path.exists(file):
                 session = fastf1.get_session(2025, selected_race, 'R')
-                session.load()
+                session.load(telemetry=False)
                 laps = session.laps.pick_driver(code)
                 laps_data = [
                     {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime)}
