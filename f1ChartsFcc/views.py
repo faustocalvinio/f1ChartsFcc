@@ -166,7 +166,7 @@ def laptimes_view(request):
             session.load(telemetry=False)
             laps = session.laps.pick_driver(driver_code)
             laptimes = [
-                {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime)}
+                {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime), "Compound": row.Compound}
                 for idx, row in laps.iterrows()
             ]
             with open(outname, "w", encoding="utf-8") as f:
@@ -194,6 +194,7 @@ def comparison_view(request):
     selected_race = request.GET.get('race')
     laptimes1, laptimes2, diff = [], [], []
     chart_html = None
+    avg_delta = None
 
     if driver1 and driver2 and selected_race:
         code1 = driver1.split("(")[-1].replace(")", "")
@@ -213,7 +214,11 @@ def comparison_view(request):
                 session.load(telemetry=False)
                 laps = session.laps.pick_driver(code)
                 laps_data = [
-                    {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime)}
+                    {
+                        "LapNumber": int(row.LapNumber),
+                        "LapTime": str(row.LapTime),
+                        "Compound": row.Compound
+                    }
                     for idx, row in laps.iterrows()
                 ]
                 with open(file, "w", encoding="utf-8") as f:
@@ -224,6 +229,9 @@ def comparison_view(request):
             laptimes1 = json.load(f)
         with open(file2, "r", encoding="utf-8") as f:
             laptimes2 = json.load(f)
+        # Map compounds per lap
+        compounds1 = {lap["LapNumber"]: lap.get("Compound") for lap in laptimes1}
+        compounds2 = {lap["LapNumber"]: lap.get("Compound") for lap in laptimes2}
 
         # Calculate differences (soporta formato '0 days 00:01:14.821000')
         import pandas as pd
@@ -236,11 +244,25 @@ def comparison_view(request):
                 t1 = pd.to_timedelta(laps1[lap])
                 t2 = pd.to_timedelta(laps2[lap])
                 delta = (t1 - t2).total_seconds()
-                diff.append({"LapNumber": lap, "Delta": delta})
             except Exception:
-                diff.append({"LapNumber": lap, "Delta": None})
+                delta = None
+            diff.append({
+                "LapNumber": lap,
+                "Delta": delta,
+                "Compound1": compounds1.get(lap),
+                "Compound2": compounds2.get(lap)
+            })
 
         # Plotly chart
+        # Determine marker colors: match compounds use their color, else grey
+        marker_colors = []
+        for d in diff:
+            if d["Compound1"] and d["Compound1"] == d["Compound2"]:
+                # use compound color
+                col = fastf1.plotting.get_compound_color(d["Compound1"], session=session)
+            else:
+                col = '#888888'
+            marker_colors.append(col)
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=[d["LapNumber"] for d in diff],
@@ -248,17 +270,36 @@ def comparison_view(request):
             mode='lines+markers',
             name='Delta (s)',
             line=dict(color='#ffd369'),
-            marker=dict(color='#393e46')
+            marker=dict(color=marker_colors, size=8)
         ))
         fig.update_layout(
             title=f"Diferencia de tiempos por vuelta: {driver1} vs {driver2} ({selected_race})",
-            xaxis_title="Lap Number",
-            yaxis_title="Delta (s) (positivo = driver1 más lento)",
             template="plotly_dark",
-            height=600,
-            width=1000
+            height=800,
+            width=1400,
+            xaxis=dict(
+                title="Lap Number",
+                tickmode="linear",
+                dtick=1,
+                tick0=1,
+                range=[1, max([d["LapNumber"] for d in diff])],
+                showgrid=True,
+                gridcolor="#444"
+            ),
+            yaxis=dict(
+                title="Delta (s)",
+                tickmode="linear",
+                dtick=0.5,
+                tickformat="+.3f",
+                ticksuffix=" s",
+                showgrid=True,
+                gridcolor="#444"
+            )
         )
         chart_html = pio.to_html(fig, full_html=False)
+        # Calcular delta promedio
+        valid_deltas = [d["Delta"] for d in diff if d.get("Delta") is not None]
+        avg_delta = sum(valid_deltas) / len(valid_deltas) if valid_deltas else None
 
     return render(request, "comparison.html", {
         "driver_names": driver_names,
@@ -267,5 +308,6 @@ def comparison_view(request):
         "driver2": driver2,
         "selected_race": selected_race,
         "chart_html": chart_html,
-        "diff": diff
+        "diff": diff,
+        "avg_delta": avg_delta
     })
