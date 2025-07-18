@@ -1,52 +1,76 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Estrategias de Neumáticos F1 2025</title>
     <meta charset="utf-8">
     <style>
-        body { background: #222831; color: #eeeeee; font-family: Arial, sans-serif; margin: 30px; }
-        h1 { color: #ffd369; }
-        .selector { margin-bottom: 20px; }
+        body {
+            background: #222831;
+            color: #eeeeee;
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        h1 {
+            color: #ffd369;
+        }
+
+        .selector {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
+
 <body>
     <h1>Estrategias de Neumáticos F1 2025</h1>
+    <a href="{% url 'home' %}"
+        style="display:inline-block;margin-bottom:20px;background:#ffd369;color:#222831;padding:10px 20px;border-radius:5px;text-decoration:none;">Home</a>
+
     <div class="selector">
         <form method="get">
             <label for="race">Selecciona carrera:</label>
             <select name="race" id="race">
                 {% for race in races %}
-                    <option value="{{ race }}" {% if race == selected_race %}selected{% endif %}>{{ race }}</option>
+                <option value="{{ race }}" {% if race==selected_race %}selected{% endif %}>{{ race }}</option>
                 {% endfor %}
             </select>
         </form>
     </div>
     <div id="spinner" style="display:flex;justify-content:center;align-items:center;height:500px;">
-        <div style="width:80px;height:80px;border:10px solid #ffd369;border-top:10px solid #222831;border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div
+            style="width:80px;height:80px;border:10px solid #ffd369;border-top:10px solid #222831;border-radius:50%;animation:spin 1s linear infinite;">
+        </div>
     </div>
     <div id="chart-container" style="display:none;">
         {{ chart_html|safe }}
     </div>
     <script>
-    // Mostrar spinner al cambiar carrera
-    document.getElementById('race').addEventListener('change', function() {
-        document.getElementById('spinner').style.display = 'flex';
-        document.getElementById('chart-container').style.display = 'none';
-        this.form.submit();
-    });
+        // Mostrar spinner al cambiar carrera
+        document.getElementById('race').addEventListener('change', function () {
+            document.getElementById('spinner').style.display = 'flex';
+            document.getElementById('chart-container').style.display = 'none';
+            this.form.submit();
+        });
 
-    window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            document.getElementById('spinner').style.display = 'none';
-            document.getElementById('chart-container').style.display = 'block';
-        }, 1200);
-    });
+        window.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('chart-container').style.display = 'block';
+            }, 1200);
+        });
     </script>
     <style>
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </body>
+
 </html>

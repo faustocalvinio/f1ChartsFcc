@@ -181,7 +181,8 @@ def laptimes_view(request):
 })
 
 
-
+def home(request):
+    return render(request, "homepage.html")
 
 
 def comparison_view(request):
