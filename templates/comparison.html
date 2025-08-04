@@ -49,27 +49,30 @@
         <select name="driver1" id="driver1">
             <option value="">-- Selecciona piloto --</option>
             {% for d in driver_names %}
-            <option value="{{ d }}" {% if d==driver1 %}selected{% endif %}>{{ d }}</option>
+            <option value="{{ d }}" {% if d == driver1 %}selected{% endif %}>{{ d }}</option>
             {% endfor %}
         </select>
         <label for="driver2">Piloto 2:</label>
         <select name="driver2" id="driver2">
             <option value="">-- Selecciona piloto --</option>
             {% for d in driver_names %}
-            <option value="{{ d }}" {% if d==driver2 %}selected{% endif %}>{{ d }}</option>
+            <option value="{{ d }}" {% if d == driver2 %}selected{% endif %}>{{ d }}</option>
             {% endfor %}
         </select>
         <label for="race">Carrera:</label>
         <select name="race" id="race">
             <option value="">-- Selecciona carrera --</option>
             {% for r in race_names %}
-            <option value="{{ r }}" {% if r==selected_race %}selected{% endif %}>{{ r }}</option>
+            <option value="{{ r }}" {% if r == selected_race %}selected{% endif %}>{{ r }}</option>
             {% endfor %}
         </select>
         <button type="submit">Comparar</button>
     </form>
     {% if chart_html %}
     <div>{{ chart_html|safe }}</div>
+    {% if avg_delta is not None %}
+    <p style="color:#ffd369; font-weight:bold;">Delta promedio: {{ avg_delta|floatformat:3 }} s</p>
+    {% endif %}
     <table>
         <tr>
             <th>Lap Number</th>

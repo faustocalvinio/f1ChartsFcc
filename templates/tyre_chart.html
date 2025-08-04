@@ -32,7 +32,7 @@
             <label for="race">Selecciona carrera:</label>
             <select name="race" id="race">
                 {% for race in races %}
-                <option value="{{ race }}" {% if race==selected_race %}selected{% endif %}>{{ race }}</option>
+                <option value="{{ race }}" {% if race == selected_race %}selected{% endif %}>{{ race }}</option>
                 {% endfor %}
             </select>
         </form>

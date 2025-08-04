@@ -5,8 +5,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import os
 import json
-import plotly.graph_objects as go
-import plotly.io as pio
+import pandas as pd
 
 races_2025 = [
     {"full_name": "Australian Grand Prix", "short_name": "Australia"},
@@ -94,12 +93,21 @@ def tyre_strategy_chart(request):
             driver_stints = stints.loc[stints["Driver"] == driver]
             previous_stint_end = 0
             for idx, row in driver_stints.iterrows():
-                compound_color = fastf1.plotting.get_compound_color(row["Compound"], session=session)
+                try:
+                    # Manejar el caso 'NONE' o None para los compuestos
+                    if row["Compound"] == 'NONE' or pd.isna(row["Compound"]):
+                        compound_color = '#888888'  # Color gris para compuestos desconocidos
+                    else:
+                        compound_color = fastf1.plotting.get_compound_color(row["Compound"], session=session)
+                except Exception:
+                    # Si hay cualquier error obteniendo el color, usar gris
+                    compound_color = '#888888'
+                
                 chart_data.append({
                     "driver": driver,
                     "stint_length": int(row["StintLength"]),
                     "stint": int(row["Stint"]),
-                    "compound": row["Compound"],
+                    "compound": str(row["Compound"]),
                     "base": int(previous_stint_end),
                     "color": compound_color
                 })
@@ -195,6 +203,7 @@ def comparison_view(request):
     selected_race = request.GET.get('race')
     laptimes1, laptimes2, diff = [], [], []
     chart_html = None
+    avg_delta = None
 
     if driver1 and driver2 and selected_race:
         code1 = driver1.split("(")[-1].replace(")", "")
@@ -241,6 +250,10 @@ def comparison_view(request):
             except Exception:
                 diff.append({"LapNumber": lap, "Delta": None})
 
+        # Calculate avg delta
+        valid_deltas = [d["Delta"] for d in diff if d["Delta"] is not None]
+        avg_delta = sum(valid_deltas) / len(valid_deltas) if valid_deltas else None
+
         # Plotly chart
         fig = go.Figure()
         fig.add_trace(go.Scatter(
@@ -268,5 +281,6 @@ def comparison_view(request):
         "driver2": driver2,
         "selected_race": selected_race,
         "chart_html": chart_html,
-        "diff": diff
+        "diff": diff,
+        "avg_delta": avg_delta
     })
