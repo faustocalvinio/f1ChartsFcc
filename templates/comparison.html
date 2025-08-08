@@ -36,6 +36,16 @@
         th {
             background: #393e46;
         }
+
+        .chart-container {
+            width: 100%;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .chart-container>div {
+            width: 100% !important;
+        }
     </style>
 </head>
 
@@ -69,7 +79,7 @@
         <button type="submit">Comparar</button>
     </form>
     {% if chart_html %}
-    <div>{{ chart_html|safe }}</div>
+    <div class="chart-container">{{ chart_html|safe }}</div>
     {% if avg_delta is not None %}
     <p style="color:#ffd369; font-weight:bold;">Delta promedio: {{ avg_delta|floatformat:3 }} s</p>
     {% endif %}
