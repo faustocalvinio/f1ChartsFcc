@@ -269,9 +269,19 @@ def comparison_view(request):
             xaxis_title="Lap Number",
             yaxis_title="Delta (s) (positivo = driver1 más lento)",
             template="plotly_dark",
-            height=700,
-            width=None,  # Esto permitirá que se ajuste al ancho del contenedor
-            autosize=True
+            height=900,
+            width=None,  # Se ajusta al ancho del contenedor
+            autosize=True,
+            yaxis=dict(
+                range=[-3, 3],      # muestra hasta ±3.0 s
+                dtick=0.1,          # ticks cada 0.1 s
+                tickformat=".1f",  # formato 0.1
+                zeroline=True,
+                zerolinecolor='rgba(255, 211, 105, 0.9)',
+                zerolinewidth=2,
+                gridcolor='rgba(255,255,255,0.08)'
+            ),
+            margin=dict(l=80, r=40, t=80, b=80)
         )
         chart_html = pio.to_html(fig, full_html=False)
 

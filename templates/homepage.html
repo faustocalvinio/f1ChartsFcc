@@ -1,18 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 Charts FCC</title>
     <style>
-        body { background: #121212; color: #eeeeee; font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        .container { max-width: 800px; margin: 50px auto; text-align: center; }
-        h1 { margin-bottom: 40px; color: #ffd369; }
-        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .nav-card { display: flex; align-items: center; justify-content: center; padding: 20px; background: #222831; color: #eeeeee; text-decoration: none; border-radius: 8px; font-size: 1.2rem; transition: transform 0.2s, background 0.2s; }
-        .nav-card:hover { transform: scale(1.05); background: #393e46; }
+        body {
+            background: #121212;
+            color: #eeeeee;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            text-align: center;
+            padding: 0 16px;
+        }
+
+        h1 {
+            color: #ffd369;
+            font-size: 2.1rem;
+            font-weight: 800;
+            margin: 10px 0 24px;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .nav-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px;
+            background: #222831;
+            color: #eeeeee;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.15rem;
+            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+            border: 1px solid #2c333d;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-2px);
+            background: #2a303a;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>F1 Charts FCC</h1>
@@ -23,4 +67,5 @@
         </div>
     </div>
 </body>
+
 </html>

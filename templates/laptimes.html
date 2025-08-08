@@ -1,30 +1,143 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>F1 Lap Times Scraper</title>
     <meta charset="utf-8">
     <style>
-        body { background: #222831; color: #eeeeee; font-family: Arial, sans-serif; margin: 30px; }
-        h1 { color: #ffd369; }
-        .selector { margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-        th, td { padding: 10px; border: 1px solid #393e46; text-align: center; }
-        th { background: #393e46; }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        body {
+            background: #222831;
+            color: #eeeeee;
+            font-family: Arial, sans-serif;
+            margin: 30px;
         }
+
+        h1 {
+            color: #ffd369;
+            font-size: 2.1rem;
+            font-weight: 800;
+            margin: 10px 0 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .selector {
+            margin-bottom: 20px;
+        }
+
+        .selector .fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px 18px;
+            align-items: end;
+        }
+
+        .selector .field {
+            position: relative;
+        }
+
+        .selector label {
+            display: block;
+            font-size: 0.9rem;
+            color: #cfd3da;
+            margin-bottom: 6px;
+        }
+
+        .selector select {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #1d222b;
+            color: #eeeeee;
+            border: 1px solid #393e46;
+            padding: 10px 36px 10px 12px;
+            border-radius: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .selector select:hover {
+            border-color: #4b5663;
+        }
+
+        .selector select:focus {
+            outline: none;
+            border-color: #ffd369;
+            box-shadow: 0 0 0 3px rgba(255, 211, 105, 0.2);
+        }
+
+        .selector .field::after {
+            content: '▾';
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            color: #ffd369;
+            pointer-events: none;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #ffd369;
+            color: #222831;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.05s ease, filter 0.2s ease;
+        }
+
+        .btn:hover {
+            filter: brightness(0.95);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #393e46;
+            text-align: center;
+        }
+
+        th {
+            background: #393e46;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
         /* Spinner styles within results */
-        #results { position: relative; }
+        #results {
+            position: relative;
+        }
+
         #results .spinner {
             display: none;
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
         }
+
         #results .spinner-icon {
-            width: 40px; height: 40px;
+            width: 40px;
+            height: 40px;
             border: 6px solid #ffd369;
             border-top-color: #222831;
             border-radius: 50%;
@@ -32,26 +145,34 @@
         }
     </style>
 </head>
+
 <body>
     <div id="content">
         <h1>F1 Lap Times Scraper</h1>
-        <a href="{% url 'home' %}" style="display:inline-block;margin-bottom:20px;background:#ffd369;color:#222831;padding:10px 20px;border-radius:5px;text-decoration:none;">Home</a>
+        <a href="{% url 'home' %}"
+            style="display:inline-block;margin-bottom:20px;background:#ffd369;color:#222831;padding:10px 20px;border-radius:5px;text-decoration:none;">Home</a>
         <form method="get" class="selector">
-            <label for="driver">Piloto:</label>
-            <select name="driver" id="driver">
-                <option value="">-- Selecciona piloto --</option>
-                {% for d in driver_names %}
-                    <option value="{{ d }}" {% if d == selected_driver %}selected{% endif %}>{{ d }}</option>
-                {% endfor %}
-            </select>
-            <label for="race">Carrera:</label>
-            <select name="race" id="race">
-                <option value="">-- Selecciona carrera --</option>
-                {% for r in race_names %}
-                    <option value="{{ r }}" {% if r == selected_race %}selected{% endif %}>{{ r }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit">Ver Laptimes</button>
+            <div class="fields">
+                <div class="field">
+                    <label for="driver">Piloto:</label>
+                    <select name="driver" id="driver">
+                        <option value="">-- Selecciona piloto --</option>
+                        {% for d in driver_names %}
+                        <option value="{{ d }}" {% if d == selected_driver %}selected{% endif %}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="race">Carrera:</label>
+                    <select name="race" id="race">
+                        <option value="">-- Selecciona carrera --</option>
+                        {% for r in race_names %}
+                        <option value="{{ r }}" {% if r == selected_race %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn">Ver Laptimes</button>
+            </div>
         </form>
         <!-- Área de resultados con spinner local -->
         <div id="results" style="position:relative;">
@@ -77,22 +198,23 @@
         </div>
     </div>
     <script>
-    const resultsDiv = document.getElementById('results');
-    const spinner = resultsDiv.querySelector('.spinner');
-    const table = resultsDiv.querySelector('table');
-    const message = resultsDiv.querySelector('p');
-    document.querySelector('form').addEventListener('submit', function() {
-        // Mostrar spinner y ocultar tabla o mensaje en resultados
-        if (table) table.style.display = 'none';
-        if (message) message.style.display = 'none';
-        spinner.style.display = 'block';
-    });
-    window.addEventListener('DOMContentLoaded', function() {
-        // Al cargar, ocultar spinner y mostrar resultados previos
-        spinner.style.display = 'none';
-        if (table) table.style.display = '';
-        if (message) message.style.display = '';
-    });
+        const resultsDiv = document.getElementById('results');
+        const spinner = resultsDiv.querySelector('.spinner');
+        const table = resultsDiv.querySelector('table');
+        const message = resultsDiv.querySelector('p');
+        document.querySelector('form').addEventListener('submit', function () {
+            // Mostrar spinner y ocultar tabla o mensaje en resultados
+            if (table) table.style.display = 'none';
+            if (message) message.style.display = 'none';
+            spinner.style.display = 'block';
+        });
+        window.addEventListener('DOMContentLoaded', function () {
+            // Al cargar, ocultar spinner y mostrar resultados previos
+            spinner.style.display = 'none';
+            if (table) table.style.display = '';
+            if (message) message.style.display = '';
+        });
     </script>
 </body>
+
 </html>
