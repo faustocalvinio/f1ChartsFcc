@@ -2,8 +2,10 @@
 <html>
 
 <head>
+    {% load static %}
     <title>F1 Lap Times Scraper</title>
     <meta charset="utf-8">
+    <link rel="icon" href="{% static 'img/favicon-tire.svg' %}" type="image/svg+xml">
     <style>
         body {
             background: #222831;
@@ -158,7 +160,7 @@
                     <select name="driver" id="driver">
                         <option value="">-- Selecciona piloto --</option>
                         {% for d in driver_names %}
-                        <option value="{{ d }}" {% if d == selected_driver %}selected{% endif %}>{{ d }}</option>
+                        <option value="{{ d }}" {% if d==selected_driver %}selected{% endif %}>{{ d }}</option>
                         {% endfor %}
                     </select>
                 </div>

@@ -57,6 +57,22 @@ drivers_2025 = [
 ]
 
 
+def _format_lap_time(value):
+    """Devuelve el tiempo en formato M:SS.mmm a partir de un Timedelta o string.
+    Si no puede parsearse, retorna el string original.
+    """
+    try:
+        td = pd.to_timedelta(value)
+        if pd.isna(td):
+            return None
+        total_ms = int(td.total_seconds() * 1000)
+        minutes = total_ms // 60000
+        seconds = (total_ms % 60000) // 1000
+        millis = total_ms % 1000
+        return f"{minutes}:{seconds:02d}.{millis:03d}"
+    except Exception:
+        return str(value)
+
 
 def tyre_strategy_chart(request):
     selected_race = request.GET.get('race')
@@ -134,8 +150,9 @@ def tyre_strategy_chart(request):
         xaxis_title="Lap Number",
         yaxis_title="Driver",
         barmode='stack',
-        height=800,
-        width=1400,
+        height=900,
+        width=None,  # se adapta al ancho del contenedor
+        autosize=True,
         showlegend=True,
         yaxis=dict(autorange='reversed'),
         margin=dict(l=100, r=40, t=80, b=80)
@@ -146,6 +163,105 @@ def tyre_strategy_chart(request):
         "chart_html": chart_html,
         "races": [r["full_name"] for r in races_2025],
         "selected_race": selected_race
+    })
+
+def qualy_delta_view(request):
+    """Gráfico de diferencias a la pole por piloto (Qualy). Datos cacheados en media/qualy-delta-charts."""
+    selected_race = request.GET.get('race')
+    if not selected_race:
+        selected_race = races_2025[0]["full_name"]
+    race_obj = next(r for r in races_2025 if r["full_name"] == selected_race)
+    race_short = race_obj["short_name"]
+
+    data_dir = os.path.join("media", "qualy-delta-charts")
+    os.makedirs(data_dir, exist_ok=True)
+    json_path = os.path.join(data_dir, f"2025_{race_short.lower()}_qualy_delta.json")
+
+    payload = None
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception:
+            payload = None
+
+    if payload is None:
+        try:
+            # Intentar cargar sesión de Qualy
+            session = fastf1.get_session(2025, race_short, 'Q')
+            session.load(telemetry=False)
+
+            laps = session.laps.dropna(subset=["LapTime"])  # descartar NaT
+            if laps.empty:
+                raise RuntimeError("Sin laptimes en la sesión de Qualy")
+
+            best_by_driver = laps.groupby("Driver")["LapTime"].min().sort_values()
+            pole_driver = best_by_driver.index[0]
+            pole_time = best_by_driver.iloc[0]
+
+            data = []
+            for drv, t in best_by_driver.items():
+                delta = (t - pole_time).total_seconds()
+                # Color por equipo si está disponible
+                try:
+                    drv_info = session.get_driver(drv)
+                    team_name = drv_info.get("TeamName")
+                    color = fastf1.plotting.get_team_color(team_name) if team_name else "#4b5663"
+                except Exception:
+                    color = "#4b5663"
+                data.append({
+                    "driver": drv,
+                    "best_lap": _format_lap_time(t),
+                    "delta": round(float(delta), 3),
+                    "color": color
+                })
+
+            payload = {
+                "race": selected_race,
+                "pole": {"driver": pole_driver, "time": _format_lap_time(pole_time)},
+                "data": data
+            }
+
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False)
+
+        except Exception:
+            payload = None
+
+    chart_html = None
+    error_message = None
+    if payload and payload.get("data"):
+        try:
+            # Construir gráfico
+            rows = sorted(payload["data"], key=lambda x: x["delta"])  # orden por delta asc
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                y=[r["driver"] for r in rows],
+                x=[r["delta"] for r in rows],
+                orientation='h',
+                marker_color=[r.get("color", "#4b5663") for r in rows],
+                hovertemplate="Driver: %{y}<br>Delta: %{x:.3f}s<extra></extra>"
+            ))
+            pole = payload.get("pole", {})
+            fig.update_layout(
+                title=f"Qualy Delta vs Pole – {race_short} 2025 (Pole: {pole.get('driver', '-')}, {pole.get('time', '-')})",
+                xaxis_title="Delta a la pole (s)",
+                yaxis_title="Piloto",
+                template="plotly_dark",
+                height=800,
+                margin=dict(l=100, r=40, t=80, b=60)
+            )
+            chart_html = pio.to_html(fig, full_html=False)
+        except Exception as e:
+            error_message = f"No se pudo generar el gráfico: {e}"
+    else:
+        error_message = "No hay datos de Qualy disponibles para esta carrera (verifica conexión o caché)."
+
+    return render(request, "qualy_delta.html", {
+        "chart_html": chart_html,
+        "races": [r["full_name"] for r in races_2025],
+        "selected_race": selected_race,
+        "error_message": error_message
     })
 
 def laptimes_view(request):
@@ -169,14 +285,19 @@ def laptimes_view(request):
         if os.path.exists(outname):
             with open(outname, "r", encoding="utf-8") as f:
                 laptimes = json.load(f)
+            # Normalizar formato para mostrar sin "0 days"
+            for lap in laptimes:
+                lap["LapTime"] = _format_lap_time(lap.get("LapTime"))
         else:
             session = fastf1.get_session(2025, selected_race, 'R')
             session.load(telemetry=False)
             laps = session.laps.pick_driver(driver_code)
-            laptimes = [
-                {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime)}
-                for idx, row in laps.iterrows()
-            ]
+            laptimes = []
+            for idx, row in laps.iterrows():
+                laptimes.append({
+                    "LapNumber": int(row.LapNumber),
+                    "LapTime": _format_lap_time(row.LapTime)
+                })
             with open(outname, "w", encoding="utf-8") as f:
                 json.dump(laptimes, f, ensure_ascii=False)
 
@@ -222,10 +343,12 @@ def comparison_view(request):
                 session = fastf1.get_session(2025, selected_race, 'R')
                 session.load(telemetry=False)
                 laps = session.laps.pick_driver(code)
-                laps_data = [
-                    {"LapNumber": int(row.LapNumber), "LapTime": str(row.LapTime)}
-                    for idx, row in laps.iterrows()
-                ]
+                laps_data = []
+                for idx, row in laps.iterrows():
+                    laps_data.append({
+                        "LapNumber": int(row.LapNumber),
+                        "LapTime": _format_lap_time(row.LapTime)
+                    })
                 with open(file, "w", encoding="utf-8") as f:
                     json.dump(laps_data, f, ensure_ascii=False)
 

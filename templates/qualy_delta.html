@@ -3,7 +3,7 @@
 
 <head>
     {% load static %}
-    <title>Estrategias de Neumáticos F1 2025</title>
+    <title>Qualy Delta F1 2025</title>
     <meta charset="utf-8">
     <link rel="icon" href="{% static 'img/favicon-tire.svg' %}" type="image/svg+xml">
     <style>
@@ -26,7 +26,7 @@
             margin-bottom: 20px;
         }
 
-        .selector .fields {
+        .fields {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px 18px;
@@ -34,41 +34,28 @@
             max-width: 520px;
         }
 
-        .selector .field {
+        .field {
             position: relative;
         }
 
-        .selector label {
+        label {
             display: block;
             font-size: 0.9rem;
             color: #cfd3da;
             margin-bottom: 6px;
         }
 
-        .selector select {
+        select {
             width: 100%;
             appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
             background-color: #1d222b;
             color: #eeeeee;
             border: 1px solid #393e46;
             padding: 10px 36px 10px 12px;
             border-radius: 8px;
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
         }
 
-        .selector select:hover {
-            border-color: #4b5663;
-        }
-
-        .selector select:focus {
-            outline: none;
-            border-color: #ffd369;
-            box-shadow: 0 0 0 3px rgba(255, 211, 105, 0.2);
-        }
-
-        .selector .field::after {
+        .field::after {
             content: '▾';
             position: absolute;
             right: 12px;
@@ -86,15 +73,6 @@
             border-radius: 8px;
             font-weight: 700;
             cursor: pointer;
-            transition: transform 0.05s ease, filter 0.2s ease;
-        }
-
-        .btn:hover {
-            filter: brightness(0.95);
-        }
-
-        .btn:active {
-            transform: translateY(1px);
         }
 
         .chart-container {
@@ -105,11 +83,23 @@
         .chart-container>div {
             width: 100% !important;
         }
+
+        .alert {
+            background: #392a2a;
+            border: 1px solid #8b3a3a;
+            padding: 10px 14px;
+            color: #ffbdbd;
+            border-radius: 8px;
+        }
     </style>
+    <script>
+        function onRaceChange(sel) { sel.form.submit(); }
+    </script>
+
 </head>
 
 <body>
-    <h1>Estrategias de Neumáticos F1 2025</h1>
+    <h1>Qualy Delta F1 2025</h1>
     <a href="{% url 'home' %}"
         style="display:inline-block;margin-bottom:20px;background:#ffd369;color:#222831;padding:10px 20px;border-radius:5px;text-decoration:none;">Home</a>
 
@@ -118,7 +108,7 @@
             <div class="fields">
                 <div class="field">
                     <label for="race">Selecciona carrera:</label>
-                    <select name="race" id="race">
+                    <select name="race" id="race" onchange="onRaceChange(this)">
                         {% for race in races %}
                         <option value="{{ race }}" {% if race == selected_race %}selected{% endif %}>{{ race }}</option>
                         {% endfor %}
@@ -128,40 +118,14 @@
             </div>
         </form>
     </div>
-    <div id="spinner" style="display:flex;justify-content:center;align-items:center;height:900px;">
-        <div
-            style="width:80px;height:80px;border:10px solid #ffd369;border-top:10px solid #222831;border-radius:50%;animation:spin 1s linear infinite;">
-        </div>
-    </div>
-    <div id="chart-container" class="chart-container"  style="display:none;width:100%;">
-        {{ chart_html|safe }}
-    </div>
-    <script>
-        // Mostrar spinner al cambiar carrera
-        document.getElementById('race').addEventListener('change', function () {
-            document.getElementById('spinner').style.display = 'flex';
-            document.getElementById('chart-container').style.display = 'none';
-            this.form.submit();
-        });
 
-        window.addEventListener('DOMContentLoaded', function () {
-            setTimeout(function () {
-                document.getElementById('spinner').style.display = 'none';
-                document.getElementById('chart-container').style.display = 'block';
-            }, 1200);
-        });
-    </script>
-    <style>
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+    {% if error_message %}
+    <div class="alert">{{ error_message }}</div>
+    {% endif %}
 
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+    {% if chart_html %}
+    <div class="chart-container">{{ chart_html|safe }}</div>
+    {% endif %}
 </body>
 
 </html>

@@ -2,9 +2,11 @@
 <html lang="en">
 
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 Charts FCC</title>
+    <link rel="icon" href="{% static 'img/favicon-tire.svg' %}" type="image/svg+xml">
     <style>
         body {
             background: #121212;
@@ -64,6 +66,7 @@
             <a href="{% url 'tyre_strategy_chart' %}" class="nav-card">Tyre Strategy Chart</a>
             <a href="{% url 'laptimes_view' %}" class="nav-card">Lap Times</a>
             <a href="{% url 'comparison_view' %}" class="nav-card">Comparison</a>
+            <a href="{% url 'qualy_delta_view' %}" class="nav-card">Qualy Delta</a>
         </div>
     </div>
 </body>

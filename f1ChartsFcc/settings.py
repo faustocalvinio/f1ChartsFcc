@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-7!dwqc&d7jx3g%my24ba!sjte6-56=1sr05z)k+0w0&0ka$du3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1','facal.space','www.facal.space']
+ALLOWED_HOSTS = ['249e84daecbc.ngrok-free.app','.onrender.com', 'localhost', '127.0.0.1','facal.space','www.facal.space']
 
 
 # Application definition
@@ -118,6 +118,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Directorios adicionales de archivos estáticos (para desarrollo)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
