@@ -6,55 +6,63 @@ import plotly.io as pio
 import os
 import json
 import pandas as pd
+from .lists.races_list import races_2025
+from .lists.drivers_list import drivers_2025
 
-races_2025 = [
-    {"full_name": "Australian Grand Prix", "short_name": "Australia"},
-    {"full_name": "Saudi Arabian Grand Prix", "short_name": "Saudi Arabia"},
-    {"full_name": "Chinese Grand Prix", "short_name": "China"},
-    {"full_name": "Japanese Grand Prix", "short_name": "Japan"},
-    {"full_name": "Bahrain Grand Prix", "short_name": "Bahrain"},
-    {"full_name": "Miami Grand Prix", "short_name": "Miami"},
-    {"full_name": "Emilia Romagna Grand Prix", "short_name": "Emilia Romagna"},
-    {"full_name": "Monaco Grand Prix", "short_name": "Monaco"},
-    {"full_name": "Canadian Grand Prix", "short_name": "Canada"},
-    {"full_name": "Spanish Grand Prix", "short_name": "Spain"},
-    {"full_name": "Austrian Grand Prix", "short_name": "Austria"},
-    {"full_name": "British Grand Prix", "short_name": "Great Britain"},
-    {"full_name": "Hungarian Grand Prix", "short_name": "Hungary"},
-    {"full_name": "Belgian Grand Prix", "short_name": "Belgium"},
-    {"full_name": "Dutch Grand Prix", "short_name": "Netherlands"},
-    {"full_name": "Italian Grand Prix", "short_name": "Italy"},
-    {"full_name": "Azerbaijan Grand Prix", "short_name": "Azerbaijan"},
-    {"full_name": "Singapore Grand Prix", "short_name": "Singapore"},
-    {"full_name": "United States Grand Prix", "short_name": "United States"},
-    {"full_name": "Mexican Grand Prix", "short_name": "Mexico"},
-    {"full_name": "Brazilian Grand Prix", "short_name": "Brazil"},
-    {"full_name": "Las Vegas Grand Prix", "short_name": "Las Vegas"},
-    {"full_name": "Qatar Grand Prix", "short_name": "Qatar"},
-    {"full_name": "Abu Dhabi Grand Prix", "short_name": "Abu Dhabi"},
-]
-drivers_2025 = [
-    {"name": "Max Verstappen", "shortcode": "VER"},
-    {"name": "Liam Lawson", "shortcode": "LAW"},
-    {"name": "Lewis Hamilton", "shortcode": "HAM"},
-    {"name": "George Russell", "shortcode": "RUS"},
-    {"name": "Charles Leclerc", "shortcode": "LEC"},
-    {"name": "Andrea Kimi Antonelli", "shortcode": "ANT"},
-    {"name": "Lando Norris", "shortcode": "NOR"},
-    {"name": "Oscar Piastri", "shortcode": "PIA"},
-    {"name": "Fernando Alonso", "shortcode": "ALO"},
-    {"name": "Lance Stroll", "shortcode": "STR"},
-    {"name": "Esteban Ocon", "shortcode": "OCO"},
-    {"name": "Jack Doohan", "shortcode": "DOO"},
-    {"name": "Pierre Gasly", "shortcode": "GAS"},
-    {"name": "Yuki Tsunoda", "shortcode": "TSU"},
-    {"name": "Isack Hadjar", "shortcode": "HAD"},
-    {"name": "Alexander Albon", "shortcode": "ALB"},
-    {"name": "Carlos Sainz", "shortcode": "SAI"},
-    {"name": "Nico Hülkenberg", "shortcode": "HUL"},
-    {"name": "Gabriel Bortoleto", "shortcode": "BOR"},
-    {"name": "Franco Colapinto", "shortcode": "COL"},
-]
+
+def _setup_cache():
+    """Initializes cache directory for FastF1."""
+    os.makedirs('cache', exist_ok=True)
+    fastf1.Cache.enable_cache('cache')
+
+
+def _extract_driver_code(driver_full_name):
+    """Extracts driver shortcode from full name string format 'Name (CODE)'."""
+    return driver_full_name.split("(")[-1].replace(")", "")
+
+
+def _normalize_race_short_name(race_short_name):
+    """Normalizes race short name for file paths."""
+    return race_short_name.replace(" ", "_").lower()
+
+
+def _load_or_scrape_lap_data(driver_code, race_name, race_short):
+    """Loads lap data from cache or scrapes from FastF1 if not available.
+    
+    Args:
+        driver_code: Driver shortcode (e.g., 'HAM')
+        race_name: Full race name (e.g., 'Hungarian Grand Prix')
+        race_short: Short race name (e.g., 'Hungary')
+    
+    Returns:
+        List of lap data dictionaries with LapNumber and LapTime
+    """
+    _setup_cache()
+    os.makedirs('data-scrapped', exist_ok=True)
+    
+    race_short_normalized = _normalize_race_short_name(race_short)
+    outname = f"data-scrapped/{driver_code}_gp_{race_short_normalized}_2025.json"
+    
+    if os.path.exists(outname):
+        with open(outname, "r", encoding="utf-8") as f:
+            return json.load(f)
+    
+    # Scrape data
+    session = fastf1.get_session(2025, race_name, 'R')
+    session.load(telemetry=False)
+    laps = session.laps.pick_driver(driver_code)
+    
+    laps_data = []
+    for idx, row in laps.iterrows():
+        laps_data.append({
+            "LapNumber": int(row.LapNumber),
+            "LapTime": _format_lap_time(row.LapTime)
+        })
+    
+    with open(outname, "w", encoding="utf-8") as f:
+        json.dump(laps_data, f, ensure_ascii=False)
+    
+    return laps_data
 
 
 def _format_lap_time(value):
@@ -274,32 +282,14 @@ def laptimes_view(request):
     laptimes = []
 
     if selected_driver and selected_race:
-        driver_code = selected_driver.split("(")[-1].replace(")", "")
+        driver_code = _extract_driver_code(selected_driver)
         race_obj = next(r for r in races_2025 if r['full_name'] == selected_race)
-        race_short = race_obj['short_name'].replace(" ", "_").lower()
-        os.makedirs('cache', exist_ok=True)
-        fastf1.Cache.enable_cache('cache')
-        os.makedirs('data-scrapped', exist_ok=True)
-        outname = f"data-scrapped/{driver_code}_gp_{race_short}_2025.json"
-
-        if os.path.exists(outname):
-            with open(outname, "r", encoding="utf-8") as f:
-                laptimes = json.load(f)
-            # Normalizar formato para mostrar sin "0 days"
-            for lap in laptimes:
-                lap["LapTime"] = _format_lap_time(lap.get("LapTime"))
-        else:
-            session = fastf1.get_session(2025, selected_race, 'R')
-            session.load(telemetry=False)
-            laps = session.laps.pick_driver(driver_code)
-            laptimes = []
-            for idx, row in laps.iterrows():
-                laptimes.append({
-                    "LapNumber": int(row.LapNumber),
-                    "LapTime": _format_lap_time(row.LapTime)
-                })
-            with open(outname, "w", encoding="utf-8") as f:
-                json.dump(laptimes, f, ensure_ascii=False)
+        race_short = race_obj['short_name']
+        
+        laptimes = _load_or_scrape_lap_data(driver_code, selected_race, race_short)
+        # Normalizar formato para mostrar sin "0 days"
+        for lap in laptimes:
+            lap["LapTime"] = _format_lap_time(lap.get("LapTime"))
 
     return render(request, "laptimes.html", {
         "driver_names": driver_names,
@@ -327,39 +317,16 @@ def comparison_view(request):
     avg_delta = None
 
     if driver1 and driver2 and selected_race:
-        code1 = driver1.split("(")[-1].replace(")", "")
-        code2 = driver2.split("(")[-1].replace(")", "")
+        code1 = _extract_driver_code(driver1)
+        code2 = _extract_driver_code(driver2)
         race_obj = next(r for r in races_2025 if r['full_name'] == selected_race)
-        race_short = race_obj['short_name'].replace(" ", "_").lower()
-        os.makedirs('cache', exist_ok=True)
-        fastf1.Cache.enable_cache('cache')
-        os.makedirs('data-scrapped', exist_ok=True)
-        file1 = f"data-scrapped/{code1}_gp_{race_short}_2025.json"
-        file2 = f"data-scrapped/{code2}_gp_{race_short}_2025.json"
+        race_short = race_obj['short_name']
 
-        # Scrape if not exists
-        for code, file in [(code1, file1), (code2, file2)]:
-            if not os.path.exists(file):
-                session = fastf1.get_session(2025, selected_race, 'R')
-                session.load(telemetry=False)
-                laps = session.laps.pick_driver(code)
-                laps_data = []
-                for idx, row in laps.iterrows():
-                    laps_data.append({
-                        "LapNumber": int(row.LapNumber),
-                        "LapTime": _format_lap_time(row.LapTime)
-                    })
-                with open(file, "w", encoding="utf-8") as f:
-                    json.dump(laps_data, f, ensure_ascii=False)
-
-        # Load laptimes
-        with open(file1, "r", encoding="utf-8") as f:
-            laptimes1 = json.load(f)
-        with open(file2, "r", encoding="utf-8") as f:
-            laptimes2 = json.load(f)
+        # Load or scrape lap data for both drivers
+        laptimes1 = _load_or_scrape_lap_data(code1, selected_race, race_short)
+        laptimes2 = _load_or_scrape_lap_data(code2, selected_race, race_short)
 
         # Calculate differences (soporta formato '0 days 00:01:14.821000')
-        import pandas as pd
         laps1 = {lap["LapNumber"]: lap["LapTime"] for lap in laptimes1}
         laps2 = {lap["LapNumber"]: lap["LapTime"] for lap in laptimes2}
         common_laps = sorted(set(laps1.keys()) & set(laps2.keys()))
